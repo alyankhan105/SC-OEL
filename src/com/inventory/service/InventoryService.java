@@ -1,6 +1,7 @@
 package com.inventory.service;
 
 import com.inventory.model.Item;
+import com.inventory.validation.InputValidator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +62,7 @@ public class InventoryService {
      * @throws IllegalArgumentException if the ID is not positive
      */
     public Optional<Item> getItemById(int id) {
-        validateId(id);
+        InputValidator.validateItemId(id);
         return inventory.stream().filter(item -> item.getId() == id).findFirst();
     }
 
@@ -75,7 +76,7 @@ public class InventoryService {
      * @throws IllegalArgumentException if the ID, name, or quantity is invalid
      */
     public boolean updateItem(int id, String newName, int newQuantity) {
-        validateId(id);
+        InputValidator.validateItemId(id);
         Optional<Item> item = getItemById(id);
         if (item.isEmpty()) {
             return false;
@@ -95,7 +96,7 @@ public class InventoryService {
      * @throws IllegalArgumentException if the ID is not positive
      */
     public boolean deleteItem(int id) {
-        validateId(id);
+        InputValidator.validateItemId(id);
         return inventory.removeIf(item -> item.getId() == id);
     }
 
@@ -126,11 +127,5 @@ public class InventoryService {
      */
     public int size() {
         return getItemCount();
-    }
-
-    private static void validateId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("Item ID must be positive: " + id);
-        }
     }
 }

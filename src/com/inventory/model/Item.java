@@ -1,10 +1,13 @@
 package com.inventory.model;
 
+import com.inventory.validation.InputValidator;
+
 /**
  * Represents a single product item held in inventory.
  * <p>
  * This class encapsulates the core attributes of an inventory item and exposes
- * them through getters and validated setters. Stock status is derived
+ * them through getters and validated setters. The ID is immutable after
+ * construction. Stock status is derived
  * dynamically from the current quantity via {@link StockStatus} rather than
  * stored as a separate field, ensuring the status always reflects the latest
  * quantity.
@@ -13,13 +16,14 @@ package com.inventory.model;
  */
 public class Item {
 
-    private int id;
+    private final int id;
     private String name;
     private int quantity;
 
     /**
      * Constructs an {@code Item} with the given attributes.
-     * All values are validated through their respective setters.
+     * The ID is validated by {@link InputValidator}; name and quantity are
+     * validated by their respective setters.
      *
      * @param id       the unique identifier of the item (must be positive)
      * @param name     the display name of the item (must not be null or blank)
@@ -27,7 +31,8 @@ public class Item {
      * @throws IllegalArgumentException if any argument is invalid
      */
     public Item(int id, String name, int quantity) {
-        setId(id);
+        InputValidator.validateItemId(id);
+        this.id = id;
         setName(name);
         setQuantity(quantity);
     }
@@ -39,19 +44,6 @@ public class Item {
      */
     public int getId() {
         return id;
-    }
-
-    /**
-     * Sets the unique identifier of this item.
-     *
-     * @param id the new item id (must be positive)
-     * @throws IllegalArgumentException if the id is zero or negative
-     */
-    public void setId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("Item id must be positive: " + id);
-        }
-        this.id = id;
     }
 
     /**
@@ -70,10 +62,8 @@ public class Item {
      * @throws IllegalArgumentException if the name is null or blank
      */
     public void setName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Item name must not be null or blank");
-        }
-        this.name = name.trim();
+        InputValidator.validateName(name);
+        this.name = name.strip();
     }
 
     /**
@@ -92,9 +82,7 @@ public class Item {
      * @throws IllegalArgumentException if the quantity is negative
      */
     public void setQuantity(int quantity) {
-        if (quantity < 0) {
-            throw new IllegalArgumentException("Quantity must not be negative: " + quantity);
-        }
+        InputValidator.validateQuantity(quantity);
         this.quantity = quantity;
     }
 
