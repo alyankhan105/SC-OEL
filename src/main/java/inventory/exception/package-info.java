@@ -1,8 +1,4 @@
 /**
- * Exception package.
- *
- * Contains custom checked and unchecked exceptions for domain errors.
- * Exceptions: ProductNotFoundException, InsufficientStockException,
- * InvalidInputException, DuplicateIdException.
+ * Reserved for future custom domain exceptions if the project needs them.
  */
 package inventory.exception;

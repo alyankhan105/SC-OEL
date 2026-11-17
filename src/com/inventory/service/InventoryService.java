@@ -63,7 +63,7 @@ public class InventoryService {
      */
     public Optional<Item> getItemById(int id) {
         InputValidator.validateItemId(id);
-        return inventory.stream().filter(item -> item.getId() == id).findFirst();
+        return findItemById(id);
     }
 
     /**
@@ -77,14 +77,16 @@ public class InventoryService {
      */
     public boolean updateItem(int id, String newName, int newQuantity) {
         InputValidator.validateItemId(id);
-        Optional<Item> item = getItemById(id);
+        Optional<Item> item = findItemById(id);
         if (item.isEmpty()) {
             return false;
         }
-        // Validate both values before mutating so a failed update changes nothing.
-        Item candidate = new Item(id, newName, newQuantity);
-        item.get().setName(candidate.getName());
-        item.get().setQuantity(candidate.getQuantity());
+
+        // Validate all update data before changing the stored item.
+        InputValidator.validateName(newName);
+        InputValidator.validateQuantity(newQuantity);
+        item.get().setName(newName);
+        item.get().setQuantity(newQuantity);
         return true;
     }
 
@@ -127,5 +129,9 @@ public class InventoryService {
      */
     public int size() {
         return getItemCount();
+    }
+
+    private Optional<Item> findItemById(int id) {
+        return inventory.stream().filter(item -> item.getId() == id).findFirst();
     }
 }

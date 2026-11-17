@@ -1,8 +1,5 @@
 /**
- * Domain model package.
- *
- * Contains plain Java entities that represent the business domain.
- * These classes hold data only and contain no business logic.
- * Entities: Product, Category, Supplier, StockTransaction, TransactionType.
+ * Legacy package retained for compatibility with the Phase 0 structure.
+ * Current domain classes are in {@code com.inventory.model}.
  */
 package inventory.model;

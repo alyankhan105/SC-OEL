@@ -1,8 +1,5 @@
 /**
- * Service package.
- *
- * Contains business logic and application orchestration.
- * Services validate input, enforce domain rules, and coordinate repositories.
- * Services: InventoryManager, ProductService, StockService, ReportService, AlertService.
+ * Legacy package retained for compatibility with the Phase 0 structure.
+ * Current service classes are in {@code com.inventory.service}.
  */
 package inventory.service;

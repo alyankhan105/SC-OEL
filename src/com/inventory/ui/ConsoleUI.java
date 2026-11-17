@@ -49,11 +49,11 @@ public class ConsoleUI {
 
     /** Starts the menu loop and closes the input scanner when the session ends. */
     public void start() {
-        try (Scanner input = scanner) {
+        try (scanner) {
             boolean running = true;
-            while (running && input.hasNextLine()) {
+            while (running && scanner.hasNextLine()) {
                 displayMenu();
-                String choiceText = readLine(input, "Enter your choice: ");
+                String choiceText = readLine("Enter your choice: ");
                 if (choiceText == null) {
                     break;
                 }
@@ -62,11 +62,11 @@ public class ConsoleUI {
                     continue;
                 }
                 switch (choice) {
-                    case 1 -> addItem(input);
+                    case 1 -> addItem();
                     case 2 -> viewAllItems();
-                    case 3 -> searchItem(input);
-                    case 4 -> updateItem(input);
-                    case 5 -> deleteItem(input);
+                    case 3 -> searchItem();
+                    case 4 -> updateItem();
+                    case 5 -> deleteItem();
                     case 6 -> output.println("Total inventory records: " + inventoryService.getItemCount());
                     case 7 -> {
                         output.println("Thank you for using the Inventory Management System. Goodbye!");
@@ -94,10 +94,10 @@ public class ConsoleUI {
         output.println("7. Exit");
     }
 
-    private void addItem(Scanner scanner) {
-        String name = readLine(scanner, "Enter item name: ");
+    private void addItem() {
+        String name = readLine("Enter item name: ");
         if (name == null) return;
-        Integer quantity = readInteger(scanner, "Enter item quantity: ", "Quantity");
+        Integer quantity = readInteger("Enter item quantity: ", "Quantity");
         if (quantity == null) return;
         try {
             Item item = inventoryService.addItem(name, quantity);
@@ -121,8 +121,8 @@ public class ConsoleUI {
         }
     }
 
-    private void searchItem(Scanner scanner) {
-        Integer id = readInteger(scanner, "Enter item ID: ", "Item ID");
+    private void searchItem() {
+        Integer id = readInteger("Enter item ID: ", "Item ID");
         if (id == null) return;
         try {
             Optional<Item> item = inventoryService.getItemById(id);
@@ -136,12 +136,12 @@ public class ConsoleUI {
         }
     }
 
-    private void updateItem(Scanner scanner) {
-        Integer id = readInteger(scanner, "Enter item ID to update: ", "Item ID");
+    private void updateItem() {
+        Integer id = readInteger("Enter item ID to update: ", "Item ID");
         if (id == null) return;
-        String name = readLine(scanner, "Enter updated item name: ");
+        String name = readLine("Enter updated item name: ");
         if (name == null) return;
-        Integer quantity = readInteger(scanner, "Enter updated quantity: ", "Quantity");
+        Integer quantity = readInteger("Enter updated quantity: ", "Quantity");
         if (quantity == null) return;
         try {
             if (inventoryService.updateItem(id, name, quantity)) {
@@ -154,8 +154,8 @@ public class ConsoleUI {
         }
     }
 
-    private void deleteItem(Scanner scanner) {
-        Integer id = readInteger(scanner, "Enter item ID to delete: ", "Item ID");
+    private void deleteItem() {
+        Integer id = readInteger("Enter item ID to delete: ", "Item ID");
         if (id == null) return;
         try {
             if (inventoryService.deleteItem(id)) {
@@ -168,8 +168,8 @@ public class ConsoleUI {
         }
     }
 
-    private Integer readInteger(Scanner scanner, String prompt, String fieldName) {
-        String text = readLine(scanner, prompt);
+    private Integer readInteger(String prompt, String fieldName) {
+        String text = readLine(prompt);
         return text == null ? null : parseInteger(text, fieldName);
     }
 
@@ -182,7 +182,7 @@ public class ConsoleUI {
         }
     }
 
-    private String readLine(Scanner scanner, String prompt) {
+    private String readLine(String prompt) {
         output.print(prompt);
         return scanner.hasNextLine() ? scanner.nextLine() : null;
     }
