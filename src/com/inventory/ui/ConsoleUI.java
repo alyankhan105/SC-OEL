@@ -2,6 +2,7 @@ package com.inventory.ui;
 
 import com.inventory.model.Item;
 import com.inventory.service.InventoryService;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -13,6 +14,8 @@ import java.util.Scanner;
 public class ConsoleUI {
 
     private final InventoryService inventoryService;
+    private final Scanner scanner;
+    private final PrintStream output;
 
     /**
      * Creates the console interface with its inventory service dependency.
@@ -21,19 +24,36 @@ public class ConsoleUI {
      * @throws IllegalArgumentException if the service is null
      */
     public ConsoleUI(InventoryService inventoryService) {
+        this(inventoryService, new Scanner(System.in), System.out);
+    }
+
+    /**
+     * Creates the interface with injectable streams for automated testing.
+     *
+     * @param inventoryService service used to perform inventory operations
+     * @param scanner source of user input; closed when {@link #start()} ends
+     * @param output destination for prompts and results
+     * @throws IllegalArgumentException if any dependency is null
+     */
+    public ConsoleUI(InventoryService inventoryService, Scanner scanner, PrintStream output) {
         if (inventoryService == null) {
             throw new IllegalArgumentException("InventoryService must not be null");
         }
+        if (scanner == null || output == null) {
+            throw new IllegalArgumentException("Scanner and output must not be null");
+        }
         this.inventoryService = inventoryService;
+        this.scanner = scanner;
+        this.output = output;
     }
 
     /** Starts the menu loop and closes the input scanner when the session ends. */
     public void start() {
-        try (Scanner scanner = new Scanner(System.in)) {
+        try (Scanner input = scanner) {
             boolean running = true;
-            while (running && scanner.hasNextLine()) {
+            while (running && input.hasNextLine()) {
                 displayMenu();
-                String choiceText = readLine(scanner, "Enter your choice: ");
+                String choiceText = readLine(input, "Enter your choice: ");
                 if (choiceText == null) {
                     break;
                 }
@@ -42,36 +62,36 @@ public class ConsoleUI {
                     continue;
                 }
                 switch (choice) {
-                    case 1 -> addItem(scanner);
+                    case 1 -> addItem(input);
                     case 2 -> viewAllItems();
-                    case 3 -> searchItem(scanner);
-                    case 4 -> updateItem(scanner);
-                    case 5 -> deleteItem(scanner);
-                    case 6 -> System.out.println("Total inventory records: " + inventoryService.getItemCount());
+                    case 3 -> searchItem(input);
+                    case 4 -> updateItem(input);
+                    case 5 -> deleteItem(input);
+                    case 6 -> output.println("Total inventory records: " + inventoryService.getItemCount());
                     case 7 -> {
-                        System.out.println("Thank you for using the Inventory Management System. Goodbye!");
+                        output.println("Thank you for using the Inventory Management System. Goodbye!");
                         running = false;
                     }
-                    default -> System.out.println("Invalid menu choice. Please enter a number from 1 to 7.");
+                    default -> output.println("Invalid menu choice. Please enter a number from 1 to 7.");
                 }
                 if (running) {
-                    System.out.println();
+                    output.println();
                 }
             }
         }
     }
 
-    private static void displayMenu() {
-        System.out.println("========================================");
-        System.out.println("       INVENTORY MANAGEMENT SYSTEM");
-        System.out.println("========================================");
-        System.out.println("1. Add New Item");
-        System.out.println("2. View All Items");
-        System.out.println("3. Search Item by ID");
-        System.out.println("4. Update Item");
-        System.out.println("5. Delete Item");
-        System.out.println("6. View Total Inventory Count");
-        System.out.println("7. Exit");
+    private void displayMenu() {
+        output.println("========================================");
+        output.println("       INVENTORY MANAGEMENT SYSTEM");
+        output.println("========================================");
+        output.println("1. Add New Item");
+        output.println("2. View All Items");
+        output.println("3. Search Item by ID");
+        output.println("4. Update Item");
+        output.println("5. Delete Item");
+        output.println("6. View Total Inventory Count");
+        output.println("7. Exit");
     }
 
     private void addItem(Scanner scanner) {
@@ -81,22 +101,22 @@ public class ConsoleUI {
         if (quantity == null) return;
         try {
             Item item = inventoryService.addItem(name, quantity);
-            System.out.println("Item added successfully. Generated ID: " + item.getId());
+            output.println("Item added successfully. Generated ID: " + item.getId());
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            System.out.println("Unable to add item: " + exception.getMessage());
+            output.println("Unable to add item: " + exception.getMessage());
         }
     }
 
     private void viewAllItems() {
         List<Item> items = inventoryService.getAllItems();
         if (items.isEmpty()) {
-            System.out.println("Inventory is empty.");
+            output.println("Inventory is empty.");
             return;
         }
-        System.out.printf("%-8s %-28s %-12s %-18s%n", "ID", "NAME", "QUANTITY", "STOCK STATUS");
-        System.out.println("---------------------------------------------------------------------");
+        output.printf("%-8s %-28s %-12s %-18s%n", "ID", "NAME", "QUANTITY", "STOCK STATUS");
+        output.println("---------------------------------------------------------------------");
         for (Item item : items) {
-            System.out.printf("%-8d %-28s %-12d %-18s%n", item.getId(), item.getName(),
+            output.printf("%-8d %-28s %-12d %-18s%n", item.getId(), item.getName(),
                     item.getQuantity(), item.getStockStatus().getLabel());
         }
     }
@@ -109,10 +129,10 @@ public class ConsoleUI {
             if (item.isPresent()) {
                 printItem(item.get());
             } else {
-                System.out.println("No item found with ID " + id + ".");
+                output.println("No item found with ID " + id + ".");
             }
         } catch (IllegalArgumentException exception) {
-            System.out.println("Unable to search item: " + exception.getMessage());
+            output.println("Unable to search item: " + exception.getMessage());
         }
     }
 
@@ -125,12 +145,12 @@ public class ConsoleUI {
         if (quantity == null) return;
         try {
             if (inventoryService.updateItem(id, name, quantity)) {
-                System.out.println("Item updated successfully.");
+                output.println("Item updated successfully.");
             } else {
-                System.out.println("No item found with ID " + id + ".");
+                output.println("No item found with ID " + id + ".");
             }
         } catch (IllegalArgumentException exception) {
-            System.out.println("Unable to update item: " + exception.getMessage());
+            output.println("Unable to update item: " + exception.getMessage());
         }
     }
 
@@ -139,36 +159,36 @@ public class ConsoleUI {
         if (id == null) return;
         try {
             if (inventoryService.deleteItem(id)) {
-                System.out.println("Item deleted successfully.");
+                output.println("Item deleted successfully.");
             } else {
-                System.out.println("No item found with ID " + id + ".");
+                output.println("No item found with ID " + id + ".");
             }
         } catch (IllegalArgumentException exception) {
-            System.out.println("Unable to delete item: " + exception.getMessage());
+            output.println("Unable to delete item: " + exception.getMessage());
         }
     }
 
-    private static Integer readInteger(Scanner scanner, String prompt, String fieldName) {
+    private Integer readInteger(Scanner scanner, String prompt, String fieldName) {
         String text = readLine(scanner, prompt);
         return text == null ? null : parseInteger(text, fieldName);
     }
 
-    private static Integer parseInteger(String text, String fieldName) {
+    private Integer parseInteger(String text, String fieldName) {
         try {
             return Integer.parseInt(text.trim());
         } catch (NumberFormatException exception) {
-            System.out.println(fieldName + " must be a whole number. Please try again.");
+            output.println(fieldName + " must be a whole number. Please try again.");
             return null;
         }
     }
 
-    private static String readLine(Scanner scanner, String prompt) {
-        System.out.print(prompt);
+    private String readLine(Scanner scanner, String prompt) {
+        output.print(prompt);
         return scanner.hasNextLine() ? scanner.nextLine() : null;
     }
 
-    private static void printItem(Item item) {
-        System.out.printf("ID: %d | Name: %s | Quantity: %d | Stock status: %s%n",
+    private void printItem(Item item) {
+        output.printf("ID: %d | Name: %s | Quantity: %d | Stock status: %s%n",
                 item.getId(), item.getName(), item.getQuantity(), item.getStockStatus().getLabel());
     }
 }

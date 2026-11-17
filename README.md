@@ -8,28 +8,22 @@ This system helps a business manage products, categories, stock quantities, inve
 ## Project Structure
 ```
 inventory-management-system/
-├── .gitignore
-├── README.md
-├── PROJECT_OVERVIEW.md
-├── REQUIREMENTS.md
-├── SYSTEM_ARCHITECTURE.md
-├── DSA_DESIGN.md
-├── src/
-│   ├── main/java/inventory/
-│   │   ├── model/          # Domain entities (Product, Category, Supplier, StockTransaction)
-│   │   ├── service/        # Business logic (InventoryManager, ReportService, ...)
-│   │   ├── repository/     # Data access abstractions
-│   │   ├── data_structure/ # Custom DSA implementations
-│   │   ├── utility/        # Cross-cutting helpers
-│   │   ├── ui/             # Console user interface
-│   │   └── exception/      # Custom exceptions
-│   └── test/java/inventory/# Unit tests (future phases)
+├── pom.xml                         # Maven build and JUnit 5 test configuration
+├── src/com/inventory/
+│   ├── Main.java
+│   ├── model/                       # Item and stock status
+│   ├── service/                     # Inventory operations
+│   ├── ui/                          # Console interface
+│   └── validation/                  # Reusable validation
+├── src/main/java/inventory/Main.java # Compatibility entry point
+├── test/com/inventory/              # JUnit 5 tests
+└── docs/testing-report.md           # Phase 5 test results
 ```
 
 ## Technology
 - Language: Java 21 (LTS)
-- Build: Standard Java project layout (no Maven/Gradle)
-- Dependencies: None
+- Build: Maven
+- Test framework: JUnit Jupiter 5
 
 ## Development Phases
 - Phase 0: Project foundation, design, documentation (complete)
@@ -39,16 +33,19 @@ inventory-management-system/
 - Phase 4: Reporting, low-stock alerts, and console UI
 - Phase 5: Testing and final report
 
-## How to Compile and Run
+## How to Build, Test, and Run
 ```bash
-# Compile all source files
-javac -d out src/main/java/inventory/**/*.java
+# Run the automated test suite
+mvn test
 
-# Run the application
-java -cp out inventory.Main
+# Compile/package the application
+mvn package
+
+# Start the console application
+java -cp target/classes com.inventory.Main
 ```
 
-> Note: UI and business logic are implemented in later phases. Phase 0 contains project structure and documentation only.
+See [docs/testing-report.md](docs/testing-report.md) for the test scenarios and verified results.
 
 ## License
 Educational use — University OEL project.

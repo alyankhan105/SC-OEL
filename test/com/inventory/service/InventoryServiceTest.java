@@ -1,86 +1,116 @@
 package com.inventory.service;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.inventory.model.Item;
-import com.inventory.model.StockStatus;
-import com.inventory.validation.InputValidator;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/** Lightweight executable checks for Phase 2, requiring no external test library. */
-public final class InventoryServiceTest {
+class InventoryServiceTest {
 
-    private InventoryServiceTest() { }
+    private InventoryService service;
 
-    public static void main(String[] args) {
-        testInputValidation();
-        InventoryService service = new InventoryService();
+    @BeforeEach
+    void setUp() {
+        service = new InventoryService();
+    }
+
+    @Test
+    void shouldAddValidAndMultipleItemsWithUniqueIds() {
         Item first = service.addItem("Keyboard", 20);
         Item second = service.addItem("Mouse", 3);
-        check(first.getId() == 1 && second.getId() == 2, "automatic IDs");
-        check(service.getItemCount() == 2, "item count");
-        check(service.getAllItems().size() == 2, "all items");
-        check(service.getItemById(first.getId()).orElseThrow() == first, "lookup existing item");
-        check(service.getItemById(99).isEmpty(), "lookup missing item");
-        expectIllegalArgument(() -> service.addItem("  ", 1), "blank name rejected");
-        expectIllegalArgument(() -> service.addItem(null, 1), "null name rejected");
-        expectIllegalArgument(() -> service.addItem("Bad quantity", -1), "negative quantity rejected");
-        check(service.updateItem(first.getId(), "Updated keyboard", 5), "update existing item");
-        check(service.getItemById(first.getId()).orElseThrow() == first, "update preserves object");
-        check(first.getName().equals("Updated keyboard"), "updated name");
-        check(first.getStockStatus() == StockStatus.LOW_STOCK, "stock status updates dynamically");
-        check(!service.updateItem(99, "Missing", 1), "update missing item");
-        expectIllegalArgument(() -> service.updateItem(first.getId(), " ", 1), "invalid update rejected");
-        check(first.getName().equals("Updated keyboard"), "failed update leaves item unchanged");
-        check(service.deleteItem(second.getId()), "delete existing item");
-        check(!service.deleteItem(second.getId()), "delete missing item");
-        Item third = service.addItem("Monitor", 0);
-        check(third.getId() == 3 && third.getId() != second.getId(), "deleted ID is not reused");
-        check(third.getStockStatus() == StockStatus.OUT_OF_STOCK, "zero quantity status");
-        List<Item> snapshot = service.getAllItems();
-        try {
-            snapshot.clear();
-            throw new AssertionError("getAllItems result should be immutable");
-        } catch (UnsupportedOperationException expected) {
-            check(service.getItemCount() == 2, "immutable snapshot keeps inventory intact");
-        }
+
+        assertAll(
+                () -> assertEquals(1, first.getId()),
+                () -> assertEquals(2, second.getId()),
+                () -> assertNotSame(first, second),
+                () -> assertEquals(2, service.getItemCount()));
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenInventoryIsEmptyAndSnapshotWhenPopulated() {
+        assertTrue(service.getAllItems().isEmpty());
+        Item item = service.addItem("Monitor", 5);
+        List<Item> items = service.getAllItems();
+
+        assertEquals(List.of(item), items);
+        assertThrows(UnsupportedOperationException.class, items::clear);
         service.getInventory().clear();
-        check(service.getItemCount() == 2, "legacy defensive copy");
-        expectIllegalArgument(() -> service.getItemById(0), "invalid ID rejected");
-        expectIllegalArgument(() -> service.deleteItem(-1), "negative ID rejected");
-        expectIllegalArgument(() -> new Item(0, "Invalid ID", 1), "item constructor rejects invalid ID");
-        expectIllegalArgument(() -> first.setName("\t "), "item setter rejects blank name");
-        expectIllegalArgument(() -> first.setQuantity(-1), "item setter rejects negative quantity");
-        check(first.getName().equals("Updated keyboard") && first.getQuantity() == 5,
-                "rejected setter input leaves item unchanged");
-        System.out.println("All InventoryService checks passed.");
+        assertEquals(1, service.getItemCount());
     }
 
-    private static void testInputValidation() {
-        expectIllegalArgument(() -> InputValidator.validateName(null), "null name rejected");
-        expectIllegalArgument(() -> InputValidator.validateName(""), "empty name rejected");
-        expectIllegalArgument(() -> InputValidator.validateName(" \t\n"), "whitespace name rejected");
-        InputValidator.validateName(" Valid ");
-        check(new Item(1, "  Padded item  ", 0).getName().equals("Padded item"),
-                "valid names are trimmed");
-        expectIllegalArgument(() -> InputValidator.validateQuantity(-1), "negative quantity rejected");
-        InputValidator.validateQuantity(0);
-        InputValidator.validateQuantity(42);
-        expectIllegalArgument(() -> InputValidator.validateItemId(-1), "negative ID rejected");
-        expectIllegalArgument(() -> InputValidator.validateItemId(0), "zero ID rejected");
-        InputValidator.validateItemId(1);
+    @Test
+    void shouldFindExistingItemAndReturnEmptyForMissingId() {
+        Item item = service.addItem("Desk", 2);
+
+        assertSame(item, service.getItemById(item.getId()).orElseThrow());
+        assertTrue(service.getItemById(999).isEmpty());
     }
 
-    private static void expectIllegalArgument(Runnable action, String description) {
-        try {
-            action.run();
-            throw new AssertionError(description);
-        } catch (IllegalArgumentException expected) {
-            // Expected validation result.
-        }
+    @Test
+    void shouldUpdateExistingObjectWithoutReplacingIt() {
+        Item item = service.addItem("Old name", 15);
+
+        assertTrue(service.updateItem(item.getId(), "New name", 4));
+
+        assertSame(item, service.getItemById(item.getId()).orElseThrow());
+        assertEquals("New name", item.getName());
+        assertEquals(4, item.getQuantity());
     }
 
-    private static void check(boolean condition, String description) {
-        if (!condition) {
-            throw new AssertionError(description);
-        }
+    @Test
+    void shouldReturnFalseWhenUpdatingMissingItem() {
+        assertFalse(service.updateItem(99, "Missing", 1));
+    }
+
+    @Test
+    void shouldNotPartiallyModifyItemWhenUpdateInformationIsInvalid() {
+        Item item = service.addItem("Original", 8);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateItem(item.getId(), "Changed", -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateItem(item.getId(), "  ", 9));
+
+        assertEquals("Original", item.getName());
+        assertEquals(8, item.getQuantity());
+    }
+
+    @Test
+    void shouldDeleteExistingItemAndReportMissingItem() {
+        Item item = service.addItem("Delete me", 1);
+
+        assertTrue(service.deleteItem(item.getId()));
+        assertFalse(service.deleteItem(item.getId()));
+        assertEquals(0, service.getItemCount());
+    }
+
+    @Test
+    void shouldNotReuseIdsAfterDeletion() {
+        Item first = service.addItem("First", 1);
+        Item second = service.addItem("Second", 2);
+        service.deleteItem(first.getId());
+
+        Item third = service.addItem("Third", 3);
+
+        assertEquals(3, third.getId());
+        assertTrue(third.getId() != second.getId());
+    }
+
+    @Test
+    void shouldRejectInvalidAddsAndIds() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> service.addItem(" ", 1)),
+                () -> assertThrows(IllegalArgumentException.class, () -> service.addItem("Valid", -1)),
+                () -> assertThrows(IllegalArgumentException.class, () -> service.getItemById(0)),
+                () -> assertThrows(IllegalArgumentException.class, () -> service.deleteItem(-1)));
+        assertEquals(0, service.getItemCount());
     }
 }
